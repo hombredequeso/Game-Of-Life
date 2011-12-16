@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+
+
+<html>
+  <head>
+    <title>Game of life (JavaScript Implementation)</title>
+    <script type="text/javascript" src="scripts/lib/arrays.js"></script>
+    <script type="text/javascript" src="scripts/lib/namespace.js"></script>
+    <script type="text/javascript" src="scripts/src/gameOfLife.js"></script>
+    <script type="text/javascript" src="scripts/src/gameOfLifeContext.js"></script>
+    <script type="text/javascript" src="scripts/src/gameOfLifeRenderer.js"></script>
+    <script type="text/javascript" src="scripts/src/periodicTimer.js"></script>
+    <link rel="stylesheet" type="text/css" href="styles/gameOfLife.css"/>
+
+    <script type="text/javascript">
+        function setupGame() {
+
+            MouseEvent.prototype.clickCoords = function() {
+                var x, y;
+                if (this.pageX || this.pageY) {
+                  x = this.pageX;
+                  y = this.pageY;
+                }
+                else {
+                  x = this.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                  y = this.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+                };
+                this.windowCoords = {
+                    x: x,
+                    y: y
+                };
+                return this;
+            };
+
+            MouseEvent.prototype.windowToElement = function() {
+                var x=this.windowCoords.x, y=this.windowCoords.y;
+                var currentElement = this.currentTarget;
+                do{
+                    x -= currentElement.offsetLeft;
+                    y -= currentElement.offsetTop;
+                } while(currentElement = currentElement.offsetParent)
+
+                this.elementCoords = {
+                    x: x,
+                    y: y
+                };
+                return this;
+            };
+
+            MouseEvent.prototype.elementToBoard = function() {
+                this.boardCoords = {
+                    x : Math.floor(this.elementCoords.x / 10),
+                    y : Math.floor(this.elementCoords.y / 10)
+                };
+
+                return this;
+            };
+
+            var getCursorPosition = function (e) {
+                return e.clickCoords().windowToElement().elementToBoard().boardCoords;
+            },
+            setOnClickCallback = function(b, cb) {
+                if (document.addEventListener) { // W3C
+                    b.addEventListener('click', cb, false);
+                } else if (document.attachEvent) { // IE
+                    b.attachEvent('onclick', cb);
+                } else { // last resort
+                    b.onclick = cb;
+                }
+            },
+            canvas = document.getElementById('tutorial'),
+            ctx = canvas.getContext('2d'),
+            gameContext = MCAPP.gameOfLife.context.create(MCAPP.gameOfLife, MCAPP.gameOfLife.renderer.create(ctx)),
+            ratioSlider = document.getElementById('ratioSlider'),
+            intervalSlider = document.getElementById('intervalSlider');
+
+            gameContext.init(canvas);
+            setOnClickCallback(document.getElementById('nextBtn'), function() {gameContext.next();});
+            setOnClickCallback(document.getElementById('resetBtn'), function() {gameContext.reset();} );
+            setOnClickCallback(document.getElementById('startAnimationBtn'), function() {gameContext.startAnimation();});
+            setOnClickCallback(document.getElementById('stopAnimationBtn'), function() {gameContext.stopAnimation();});
+            setOnClickCallback(canvas, function(e) { gameContext.boardClick(getCursorPosition(e));});
+            ratioSlider.onchange = function(){gameContext.setNotLiveProportion(this.value);};
+            intervalSlider.onchange = function(){gameContext.setAnimationInterval(this.value);};
+        }
+    </script>
+
+    <style type="text/css">
+      canvas { border: 1px solid black; }
+    </style>
+
+  </head>
+
+
+  <body onload="setupGame();">
+  <div id="divHeader">
+      <p id="title">Game of Life (JavaScript Implementation)</p>
+  </div>
+  <div id="divGame">
+      <div id="divControls">
+            <p class="boxTitle">Controls</p>
+            <ul>
+            <li>
+            <button id="resetBtn" class="controlBtn">Reset Board</button>
+            </li><li>
+            <button id="nextBtn" class="controlBtn">Move One</button>
+            </li><li>
+            <label>Live Ratio:</label><br/>
+            <input id="ratioSlider" type="range" class="inputSlider" min="0" max="100" value="50"/>
+            </li><li>
+            <button id="startAnimationBtn" >Run</button>
+            </li><li>
+            <button id="stopAnimationBtn">Pause</button>
+            </li><li>
+            <label>Speed</label><br/>
+            <input id="intervalSlider" type="range" class="inputSlider" min="1" max="20" value="3" label="Interval" onchange="setAnimationInterval(this.value)"/>
+            </li></ul>
+      </div>
+      <div id="divBoard">
+        <canvas id="tutorial" width="600" height="600"></canvas>
+      </div>
+    </div>
+  </body>
+</html>
